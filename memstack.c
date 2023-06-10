@@ -104,3 +104,27 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc)
 	frames[currentFrame].size++;
 	return out;
 }
+
+void* memstack_realloc(struct memstack_loc loc, size_t newSize)
+{
+	if(newSize == 0)
+	{
+		memstack_free(loc);
+		return NULL;
+	}else
+	{
+		void* n = realloc(frames[loc.frameIndex].arr[loc.framePos], newSize);
+		if(n == NULL)
+		{
+			return NULL;
+		}else{
+			frames[loc.frameIndex].arr[loc.framePos] = n;
+			return n;
+		}
+	}
+}
+
+void  memstack_free(struct memstack_loc loc)
+{
+	free(frames[loc.frameIndex].arr[loc.framePos]);
+}

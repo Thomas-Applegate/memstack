@@ -60,7 +60,9 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc);
 void* memstack_realloc(struct memstack_loc loc, size_t newSize);
 
 //Manually frees data previously obtained from memstack_malloc
-void  memstack_free(struct memstack_loc);
+//if loc does not refer to data previously allocated by memstack_malloc
+//then the behavior is undefined
+void  memstack_free(struct memstack_loc loc);
 
 
 #endif //MEMSTACK_H
