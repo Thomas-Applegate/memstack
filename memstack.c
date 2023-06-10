@@ -102,8 +102,10 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc)
 	if(out == NULL) { return NULL; }
 	//store the pointer in the next open position
 	frames[currentFrame].arr[frames[currentFrame].size] = out;
-	loc->frameIndex = currentFrame;
-	loc->framePos = frames[currentFrame].size;
+	if(loc != NULL){
+		loc->frameIndex = currentFrame;
+		loc->framePos = frames[currentFrame].size;
+	}
 	frames[currentFrame].size++;
 	return out;
 }
