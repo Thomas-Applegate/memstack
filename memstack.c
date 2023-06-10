@@ -82,6 +82,9 @@ void memstack_popAll()
 
 void* memstack_malloc(size_t size, struct memstack_loc* loc)
 {
+	if(currentFrame < 0){
+		return NULL;
+	}
 	if(frames[currentFrame].size == frames[currentFrame].capacity)
 	{
 		//try to reallocate the array of pointers
