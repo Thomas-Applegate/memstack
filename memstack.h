@@ -27,7 +27,8 @@
 
 //represents the location of the pointer held internally
 //must be used to realloc or free prematurely
-struct memstack_loc {
+struct memstack_loc
+{
 	uint16_t frameIndex;
 	size_t   framePos;
 };

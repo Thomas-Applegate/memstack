@@ -19,3 +19,62 @@
 //OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "memstack.h"
+
+#define NUM_FRAMES 4096
+#define DEFAULT_CAPACITY 64
+
+struct frameInfo
+{
+	size_t size;
+	size_t capacity;
+	void* arr;
+}
+
+static struct frameInfo frames[NUM_FRAMES];
+static int16_t currentFrame = -1;
+
+bool memstack_push()
+{
+	if(currentFrame == NUM_FRAMES - 1)
+	{
+		return false;
+	}else{
+		//try to allocate a new frame
+		void* a = malloc(DEFAULT_CAPACITY * sizeof(void*));
+		if(a == NULL){
+			return false;
+		}
+		//make a new frame
+		currentFrame++;
+		frames[currentFrame].size = 0;
+		frames[currentFrame].capacity = DEFAULT_CAPACITY
+		frames[currentFrame].arr = a;
+		return true;
+	}
+}
+
+void memstack_pop(unsigned int numFrames)
+{
+	while(numFrames > 0 && currentFrame >= 0){
+		for(size_t i = 0; i < frames[currentFrame].size; i++)
+		{
+			free(frames[currentFrame].arr[i]);
+		}
+		free(frames[currentFrame].arr)
+		numFrames--;
+		currentFrame--;
+	}
+}
+
+void memstack_popAll()
+{
+	while(currentFrame >= 0)
+	{
+		for(size_t i = 0; i < frames[currentFrame].size; i++)
+		{
+			free(frames[currentFrame].arr[i]);
+		}
+		free(frames[currentFrame].arr)
+		currentFrame--;
+	}
+}
