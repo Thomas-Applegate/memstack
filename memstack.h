@@ -29,7 +29,7 @@
 //must be used to realloc or free prematurely
 struct memstack_loc
 {
-	uint16_t frameIndex;
+	int16_t frameIndex;
 	size_t   framePos;
 };
 
