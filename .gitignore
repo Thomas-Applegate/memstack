@@ -53,3 +53,5 @@ dkms.conf
 
 #workspace specific files
 *.geany
+test.c
+test.out
