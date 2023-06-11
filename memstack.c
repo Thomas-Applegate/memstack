@@ -88,14 +88,14 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc)
 	if(frames[currentFrame].size == frames[currentFrame].capacity)
 	{
 		//try to reallocate the array of pointers
-		size_t newSize = 1.5 * frames[currentFrame].capacity;
-		void* a = realloc(frames[currentFrame].arr, newSize);
+		size_t newCapacity = 2 * frames[currentFrame].capacity;
+		void* a = realloc(frames[currentFrame].arr, newCapacity * sizeof(void*));
 		if(a == NULL)
 		{
 			return NULL;
 		}else{
 			frames[currentFrame].arr = a;
-			frames[currentFrame].capacity = newSize;
+			frames[currentFrame].capacity = newCapacity;
 		}
 	}
 	void* out = malloc(size);
@@ -132,4 +132,5 @@ void* memstack_realloc(struct memstack_loc loc, size_t newSize)
 void  memstack_free(struct memstack_loc loc)
 {
 	free(frames[loc.frameIndex].arr[loc.framePos]);
+	frames[loc.frameIndex].arr[loc.framePos] = NULL;
 }
