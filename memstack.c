@@ -20,6 +20,7 @@
 
 #include "memstack.h"
 #include <stdlib.h>
+#include <string.h>
 
 #define NUM_FRAMES 4096
 #define DEFAULT_CAPACITY 64
@@ -107,6 +108,13 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc)
 		loc->framePos = frames[currentFrame].size;
 	}
 	frames[currentFrame].size++;
+	return out;
+}
+
+void* memstack_calloc(size_t size, struct memstack_loc* loc)
+{
+	void* out = memstack_malloc(size, loc);
+	memset(out, 0, size);
 	return out;
 }
 

@@ -52,6 +52,13 @@ void memstack_popAll();
 //If allocation is unsucsessful then NULL will be returned
 void* memstack_malloc(size_t size, struct memstack_loc* loc);
 
+//Tries to allocate data of size and clear it. If sucessful returns a pointer
+//to the allocated memory and returns by reference the memstack_loc
+//of the internal data used to keep track of the memory.
+//If you do not wish to use the memstack_loc simply pass in NULL.
+//If allocation is unsucsessful then NULL will be returned
+void* memstack_calloc(size_t size, struct memstack_loc* loc);
+
 //Tries to reallocate data referenced by the provided memstack_loc
 //If sucessful returns the pointer to the reallocated data, otherwise returns
 //NULL. If newSize is 0 the data will be freed and NULL returned.
@@ -63,6 +70,5 @@ void* memstack_realloc(struct memstack_loc loc, size_t newSize);
 //if loc does not refer to data previously allocated by memstack_malloc
 //then the behavior is undefined
 void  memstack_free(struct memstack_loc loc);
-
 
 #endif //MEMSTACK_H
