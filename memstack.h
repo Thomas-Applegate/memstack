@@ -67,8 +67,14 @@ void* memstack_calloc(size_t size, struct memstack_loc* loc);
 void* memstack_realloc(struct memstack_loc loc, size_t newSize);
 
 //Manually frees data previously obtained from memstack_malloc
-//if loc does not refer to data previously allocated by memstack_malloc
+//If loc does not refer to data previously allocated by memstack_malloc
 //then the behavior is undefined
 void  memstack_free(struct memstack_loc loc);
+
+//Lower a previously allocated block to at most num frames down.
+//If there is an error then the block will not be lowered.
+//returns true on sucess and the new location by reference
+//returns false on failure and does not move the block
+bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames);
 
 #endif //MEMSTACK_H

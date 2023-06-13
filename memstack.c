@@ -142,3 +142,40 @@ void  memstack_free(struct memstack_loc loc)
 	free(frames[loc.frameIndex].arr[loc.framePos]);
 	frames[loc.frameIndex].arr[loc.framePos] = NULL;
 }
+
+bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
+{
+	//compute new frame
+	int16_t newFrame = loc->frameIndex - numFrames;
+	if(newFrame < 0) { newFrame = 0; }
+	
+	//get the pointer at loc
+	void* p = frames[loc->frameIndex].arr[loc->framePos];
+	
+	//check if the new frame needs to be reallocated
+	if(frames[newFrame].size == frames[newFrame].capacity)
+	{
+		//try to reallocate the array of pointers
+		size_t newCapacity = 2 * frames[newFrame].capacity;
+		void* a = realloc(frames[newFrame].arr, newCapacity * sizeof(void*));
+		if(a == NULL)
+		{
+			return false;
+		}else{
+			frames[newFrame].arr = a;
+			frames[newFrame].capacity = newCapacity;
+		}
+	}
+	
+	//move the pointer
+	frames[newFrame].arr[frames[newFrame].size] = p;
+	//set the old pointer to NULL
+	frames[loc->frameIndex].arr[loc->framePos] = NULL;
+	//update the loc
+	loc->frameIndex = newFrame;
+	loc->framePos   = frames[newFrame].size;
+	
+	frames[newFrame].size++;
+	
+	return true;
+}
