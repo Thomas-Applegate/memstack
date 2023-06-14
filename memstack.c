@@ -43,6 +43,27 @@ struct frameInfo
 static struct frameInfo frames[NUM_FRAMES];
 static int16_t currentFrame = -1;
 
+static const struct block NULL_BLOCK = {
+	.shouldFree = false,
+	.data = NULL,
+	.cbVoid = NULL,
+	.cbPtr = NULL
+};
+
+static bool realloc_frame(int16_t frameNum)
+{
+	//try to reallocate the array of pointers
+		size_t newCapacity = 2 * frames[frameNum].capacity;
+		void* a = realloc(frames[frameNum].arr, newCapacity * sizeof(struct block));
+		if(a == NULL)
+		{
+			return false;
+		}else{
+			frames[frameNum].arr = a;
+			frames[frameNum].capacity = newCapacity;
+		}
+}
+
 bool memstack_push()
 {
 	if(currentFrame == NUM_FRAMES - 1)
@@ -68,7 +89,9 @@ void memstack_pop(unsigned int numFrames)
 	while(numFrames > 0 && currentFrame >= 0){
 		for(size_t i = 0; i < frames[currentFrame].size; i++)
 		{
-			free(frames[currentFrame].arr[i]);
+			struct memstack_loc loc = {.frameIndex = currentFrame,
+				.framePos = i};
+			memstack_free(loc);
 		}
 		free(frames[currentFrame].arr);
 		numFrames--;
@@ -82,7 +105,9 @@ void memstack_popAll()
 	{
 		for(size_t i = 0; i < frames[currentFrame].size; i++)
 		{
-			free(frames[currentFrame].arr[i]);
+			struct memstack_loc loc = {.frameIndex = currentFrame,
+				.framePos = i};
+			memstack_free(loc);
 		}
 		free(frames[currentFrame].arr);
 		currentFrame--;
@@ -96,21 +121,15 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc, memstack_callbackPt
 	}
 	if(frames[currentFrame].size == frames[currentFrame].capacity)
 	{
-		//try to reallocate the array of pointers
-		size_t newCapacity = 2 * frames[currentFrame].capacity;
-		void* a = realloc(frames[currentFrame].arr, newCapacity * sizeof(struct block));
-		if(a == NULL)
-		{
-			return NULL;
-		}else{
-			frames[currentFrame].arr = a;
-			frames[currentFrame].capacity = newCapacity;
-		}
+		if(realloc_frame(currentFrame) == false) { return NULL; }
 	}
 	void* out = malloc(size);
 	if(out == NULL) { return NULL; }
 	//store the pointer in the next open position
-	frames[currentFrame].arr[frames[currentFrame].size] = out;
+	frames[currentFrame].arr[frames[currentFrame].size].data = out;
+	frames[currentFrame].arr[frames[currentFrame].size].shouldFree = true;
+	frames[currentFrame].arr[frames[currentFrame].size].cbPtr = fn;
+	frames[currentFrame].arr[frames[currentFrame].size].cbVoid = NULL;
 	if(loc != NULL){
 		loc->frameIndex = currentFrame;
 		loc->framePos = frames[currentFrame].size;
@@ -134,12 +153,12 @@ void* memstack_realloc(struct memstack_loc loc, size_t newSize)
 		return NULL;
 	}else
 	{
-		void* n = realloc(frames[loc.frameIndex].arr[loc.framePos], newSize);
+		void* n = realloc(frames[loc.frameIndex].arr[loc.framePos].data, newSize);
 		if(n == NULL)
 		{
 			return NULL;
 		}else{
-			frames[loc.frameIndex].arr[loc.framePos] = n;
+			frames[loc.frameIndex].arr[loc.framePos].data = n;
 			return n;
 		}
 	}
@@ -147,8 +166,26 @@ void* memstack_realloc(struct memstack_loc loc, size_t newSize)
 
 void  memstack_free(struct memstack_loc loc)
 {
-	free(frames[loc.frameIndex].arr[loc.framePos]);
-	frames[loc.frameIndex].arr[loc.framePos] = NULL;
+	//run callbacks
+	if(frames[loc.frameIndex].arr[loc.framePos].cbPtr != NULL)
+	{
+		frames[loc.frameIndex].arr[loc.framePos].cbPtr(frames[loc.frameIndex].arr[loc.framePos].data);
+		frames[loc.frameIndex].arr[loc.framePos].cbPtr = NULL;
+	}
+	
+	if(frames[loc.frameIndex].arr[loc.framePos].cbVoid != NULL)
+	{
+		frames[loc.frameIndex].arr[loc.framePos].cbVoid();
+		frames[loc.frameIndex].arr[loc.framePos].cbVoid = NULL;
+	}
+	
+	//free data if needed
+	if(frames[loc.frameIndex].arr[loc.framePos].shouldFree && 
+		frames[loc.frameIndex].arr[loc.framePos].data != NULL)
+	{
+		free(frames[loc.frameIndex].arr[loc.framePos].data);
+		frames[loc.frameIndex].arr[loc.framePos].data = NULL;
+	}
 }
 
 bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
@@ -158,29 +195,18 @@ bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
 	if(newFrame < 0) { newFrame = 0; }
 	
 	//get the pointer at loc
-	void* p = frames[loc->frameIndex].arr[loc->framePos];
+	struct block b = frames[loc->frameIndex].arr[loc->framePos];
 	
 	//check if the new frame needs to be reallocated
 	if(frames[newFrame].size == frames[newFrame].capacity)
 	{
-		//try to reallocate the array of pointers
-		size_t newCapacity = 2 * frames[newFrame].capacity;
-		void* a = realloc(frames[newFrame].arr,
-			newCapacity * sizeof(struct block));
-		
-		if(a == NULL)
-		{
-			return false;
-		}else{
-			frames[newFrame].arr = a;
-			frames[newFrame].capacity = newCapacity;
-		}
+		if(realloc_frame(newFrame) == false) { return false; }
 	}
 	
 	//move the pointer
-	frames[newFrame].arr[frames[newFrame].size] = p;
-	//set the old pointer to NULL
-	frames[loc->frameIndex].arr[loc->framePos] = NULL;
+	frames[newFrame].arr[frames[newFrame].size] = b;
+	//set the old data to NULL
+	frames[loc->frameIndex].arr[loc->framePos] = NULL_BLOCK;
 	//update the loc
 	loc->frameIndex = newFrame;
 	loc->framePos   = frames[newFrame].size;
