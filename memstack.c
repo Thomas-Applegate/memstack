@@ -53,15 +53,25 @@ static const struct block NULL_BLOCK = {
 static bool realloc_frame(int16_t frameNum)
 {
 	//try to reallocate the array of pointers
-		size_t newCapacity = 2 * frames[frameNum].capacity;
-		void* a = realloc(frames[frameNum].arr, newCapacity * sizeof(struct block));
-		if(a == NULL)
-		{
-			return false;
-		}else{
-			frames[frameNum].arr = a;
-			frames[frameNum].capacity = newCapacity;
-		}
+	size_t newCapacity = 2 * frames[frameNum].capacity;
+	void* a = realloc(frames[frameNum].arr, newCapacity * sizeof(struct block));
+	if(a == NULL)
+	{
+		return false;
+	}else{
+		frames[frameNum].arr = a;
+		frames[frameNum].capacity = newCapacity;
+	}
+}
+
+static void free_current_frame()
+{
+	for(int i = frames[currentFrame].size - 1; i >= 0 ; i--)
+	{
+		struct memstack_loc loc = {.frameIndex = currentFrame, .framePos = i};
+		memstack_free(loc);
+	}
+	free(frames[currentFrame].arr);
 }
 
 bool memstack_push()
@@ -87,13 +97,7 @@ bool memstack_push()
 void memstack_pop(unsigned int numFrames)
 {
 	while(numFrames > 0 && currentFrame >= 0){
-		for(size_t i = 0; i < frames[currentFrame].size; i++)
-		{
-			struct memstack_loc loc = {.frameIndex = currentFrame,
-				.framePos = i};
-			memstack_free(loc);
-		}
-		free(frames[currentFrame].arr);
+		free_current_frame();
 		numFrames--;
 		currentFrame--;
 	}
@@ -103,13 +107,7 @@ void memstack_popAll()
 {
 	while(currentFrame >= 0)
 	{
-		for(size_t i = 0; i < frames[currentFrame].size; i++)
-		{
-			struct memstack_loc loc = {.frameIndex = currentFrame,
-				.framePos = i};
-			memstack_free(loc);
-		}
-		free(frames[currentFrame].arr);
+		free_current_frame();
 		currentFrame--;
 	}
 }
