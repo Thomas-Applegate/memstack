@@ -25,11 +25,19 @@
 #define NUM_FRAMES 4096
 #define DEFAULT_CAPACITY 64
 
+struct block
+{
+	bool shouldFree;
+	void* data;
+	memstack_callbackVoid cbVoid;
+	memstack_callbackPtr cbPtr;
+};
+
 struct frameInfo
 {
 	size_t size;
 	size_t capacity;
-	void** arr;
+	struct block* arr;
 };
 
 static struct frameInfo frames[NUM_FRAMES];
@@ -42,7 +50,7 @@ bool memstack_push()
 		return false;
 	}else{
 		//try to allocate a new frame
-		void* a = malloc(DEFAULT_CAPACITY * sizeof(void*));
+		void* a = malloc(DEFAULT_CAPACITY * sizeof(struct block));
 		if(a == NULL){
 			return false;
 		}
@@ -81,7 +89,7 @@ void memstack_popAll()
 	}
 }
 
-void* memstack_malloc(size_t size, struct memstack_loc* loc)
+void* memstack_malloc(size_t size, struct memstack_loc* loc, memstack_callbackPtr fn)
 {
 	if(currentFrame < 0){
 		return NULL;
@@ -90,7 +98,7 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc)
 	{
 		//try to reallocate the array of pointers
 		size_t newCapacity = 2 * frames[currentFrame].capacity;
-		void* a = realloc(frames[currentFrame].arr, newCapacity * sizeof(void*));
+		void* a = realloc(frames[currentFrame].arr, newCapacity * sizeof(struct block));
 		if(a == NULL)
 		{
 			return NULL;
@@ -111,9 +119,9 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc)
 	return out;
 }
 
-void* memstack_calloc(size_t size, struct memstack_loc* loc)
+void* memstack_calloc(size_t size, struct memstack_loc* loc, memstack_callbackPtr fn)
 {
-	void* out = memstack_malloc(size, loc);
+	void* out = memstack_malloc(size, loc, fn);
 	memset(out, 0, size);
 	return out;
 }
@@ -157,7 +165,9 @@ bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
 	{
 		//try to reallocate the array of pointers
 		size_t newCapacity = 2 * frames[newFrame].capacity;
-		void* a = realloc(frames[newFrame].arr, newCapacity * sizeof(void*));
+		void* a = realloc(frames[newFrame].arr,
+			newCapacity * sizeof(struct block));
+		
 		if(a == NULL)
 		{
 			return false;
@@ -178,4 +188,29 @@ bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
 	frames[newFrame].size++;
 	
 	return true;
+}
+
+bool memstack_registerPtr(void*, memstack_callbackPtr fn, struct memstack_loc* loc)
+{
+	return false;
+}
+
+void memstack_registerLoc(struct memstack_loc loc, memstack_callbackPtr fn)
+{
+	
+}
+
+void memstack_registerLocVoid(struct memstack_loc loc, memstack_callbackVoid fn)
+{
+	
+}
+
+bool memstack_registerVoid(memstack_callbackVoid fn, struct memstack_loc* loc)
+{
+	return false;
+}
+
+void memstack_unregister(struct memstack_loc loc)
+{
+	
 }
