@@ -116,7 +116,8 @@ void memstack_popAll()
 
 void* memstack_malloc(size_t size, struct memstack_loc* loc, memstack_callbackPtr fn)
 {
-	if(currentFrame < 0){
+	if(currentFrame < 0)
+	{
 		return NULL;
 	}
 	if(frames[currentFrame].size == frames[currentFrame].capacity)
@@ -203,7 +204,7 @@ bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
 		if(realloc_frame(newFrame) == false) { return false; }
 	}
 	
-	//move the pointer
+	//move the block
 	frames[newFrame].arr[frames[newFrame].size] = b;
 	//set the old data to NULL
 	frames[loc->frameIndex].arr[loc->framePos] = NULL_BLOCK;
@@ -216,27 +217,64 @@ bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
 	return true;
 }
 
-bool memstack_registerPtr(void*, memstack_callbackPtr fn, struct memstack_loc* loc)
+bool memstack_registerPtr(void* ptr, memstack_callbackPtr fn, struct memstack_loc* loc)
 {
-	return false;
+	if(currentFrame < 0)
+	{
+		return false;
+	}
+	if(frames[currentFrame].size == frames[currentFrame].capacity)
+	{
+		if(realloc_frame(currentFrame) == false) { return false; }
+	}
+	//store the pointer in the next open position
+	frames[currentFrame].arr[frames[currentFrame].size].data = ptr;
+	frames[currentFrame].arr[frames[currentFrame].size].shouldFree = false;
+	frames[currentFrame].arr[frames[currentFrame].size].cbPtr = fn;
+	frames[currentFrame].arr[frames[currentFrame].size].cbVoid = NULL;
+	if(loc != NULL){
+		loc->frameIndex = currentFrame;
+		loc->framePos = frames[currentFrame].size;
+	}
+	frames[currentFrame].size++;
+	return true;
 }
 
 void memstack_registerLoc(struct memstack_loc loc, memstack_callbackPtr fn)
 {
-	
+	frames[loc.frameIndex].arr[loc.framePos].cbPtr = fn;
 }
 
 void memstack_registerLocVoid(struct memstack_loc loc, memstack_callbackVoid fn)
 {
-	
+	frames[loc.frameIndex].arr[loc.framePos].cbVoid= fn;
 }
 
 bool memstack_registerVoid(memstack_callbackVoid fn, struct memstack_loc* loc)
 {
-	return false;
+	if(currentFrame < 0)
+	{
+		return false;
+	}
+	if(frames[currentFrame].size == frames[currentFrame].capacity)
+	{
+		if(realloc_frame(currentFrame) == false) { return false; }
+	}
+	//store the pointer in the next open position
+	frames[currentFrame].arr[frames[currentFrame].size].data = NULL;
+	frames[currentFrame].arr[frames[currentFrame].size].shouldFree = false;
+	frames[currentFrame].arr[frames[currentFrame].size].cbPtr = NULL;
+	frames[currentFrame].arr[frames[currentFrame].size].cbVoid = fn;
+	if(loc != NULL){
+		loc->frameIndex = currentFrame;
+		loc->framePos = frames[currentFrame].size;
+	}
+	frames[currentFrame].size++;
+	return true;
 }
 
 void memstack_unregister(struct memstack_loc loc)
 {
-	
+	frames[loc.frameIndex].arr[loc.framePos].cbPtr = NULL;
+	frames[loc.frameIndex].arr[loc.framePos].cbVoid = NULL;
 }

@@ -94,7 +94,7 @@ bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames);
 //Also returns a memstack_loc by reference refering to the registered callback
 //use memstack_lower to lower the callback in the stack or memstack_free
 //to prematurly call it.
-bool memstack_registerPtr(void*, memstack_callbackPtr fn, struct memstack_loc* loc);
+bool memstack_registerPtr(void* ptr, memstack_callbackPtr fn, struct memstack_loc* loc);
 
 //register a function to be called with a pointer obtained by memstack_malloc or
 //memstack_calloc upon freeing it. You can also pass this function into memstack_malloc
