@@ -41,7 +41,7 @@ struct frameInfo
 };
 
 static struct frameInfo frames[NUM_FRAMES];
-static int16_t currentFrame = -1;
+static int currentFrame = -1;
 
 static const struct block NULL_BLOCK = {
 	.shouldFree = false,

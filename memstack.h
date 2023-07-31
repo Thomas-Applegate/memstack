@@ -22,7 +22,6 @@
 #define MEMSTACK_H
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
 
 //typedef the function pointers used by the library
@@ -33,7 +32,7 @@ typedef void (*memstack_callbackPtr)(void*);
 //must be used to realloc or free prematurely
 struct memstack_loc
 {
-	int16_t frameIndex;
+	int frameIndex;
 	size_t   framePos;
 };
 
@@ -71,13 +70,13 @@ void* memstack_calloc(size_t size, struct memstack_loc* loc, memstack_callbackPt
 //If sucessful returns the pointer to the reallocated data, otherwise returns
 //NULL. If newSize is 0 the data will be freed and NULL returned.
 //This will not allocate memory for the first time you must use memstack_malloc
-//to obtain memory before reallocing
+//or memstack_calloc to obtain memory before reallocing
 void* memstack_realloc(struct memstack_loc loc, size_t newSize);
 
 //Manually frees data previously obtained from memstack_malloc
 //If loc does not refer to data previously allocated by memstack_malloc
 //then the behavior is undefined
-//If the loc refers to an pointer with a callabck then the callback
+//If the loc refers to a pointer with a callabck then the callback
 //will be called.
 //If the pointer referes to memory obtained externally, then
 //it will not be freed
