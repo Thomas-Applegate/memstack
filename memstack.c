@@ -23,7 +23,7 @@
 #include <string.h>
 
 #define NUM_FRAMES 4096
-#define DEFAULT_CAPACITY 64
+#define DEFAULT_CAPACITY 16
 
 struct block
 {
