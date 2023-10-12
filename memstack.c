@@ -82,9 +82,7 @@ bool memstack_push()
 	}else{
 		//try to allocate a new frame
 		void* a = malloc(DEFAULT_CAPACITY * sizeof(struct block));
-		if(a == NULL){
-			return false;
-		}
+		if(a == NULL) return false;
 		//make a new frame
 		currentFrame++;
 		frames[currentFrame].size = 0;
@@ -96,7 +94,8 @@ bool memstack_push()
 
 void memstack_pop(unsigned int numFrames)
 {
-	while(numFrames > 0 && currentFrame >= 0){
+	while(numFrames > 0 && currentFrame >= 0)
+	{
 		free_current_frame();
 		numFrames--;
 		currentFrame--;
@@ -114,22 +113,21 @@ void memstack_popAll()
 
 void* memstack_malloc(size_t size, struct memstack_loc* loc, memstack_callbackPtr fn)
 {
-	if(currentFrame < 0)
-	{
-		return NULL;
-	}
+	if(currentFrame < 0) return NULL;
+	
 	if(frames[currentFrame].size == frames[currentFrame].capacity)
 	{
-		if(realloc_frame(currentFrame) == false) { return NULL; }
+		if(realloc_frame(currentFrame) == false) return NULL;
 	}
 	void* out = malloc(size);
-	if(out == NULL) { return NULL; }
+	if(out == NULL) return NULL;
 	//store the pointer in the next open position
 	frames[currentFrame].arr[frames[currentFrame].size].data = out;
 	frames[currentFrame].arr[frames[currentFrame].size].shouldFree = true;
 	frames[currentFrame].arr[frames[currentFrame].size].cbPtr = fn;
 	frames[currentFrame].arr[frames[currentFrame].size].cbVoid = NULL;
-	if(loc != NULL){
+	if(loc != NULL)
+	{
 		loc->frameIndex = currentFrame;
 		loc->framePos = frames[currentFrame].size;
 	}
@@ -140,12 +138,16 @@ void* memstack_malloc(size_t size, struct memstack_loc* loc, memstack_callbackPt
 void* memstack_calloc(size_t size, struct memstack_loc* loc, memstack_callbackPtr fn)
 {
 	void* out = memstack_malloc(size, loc, fn);
-	memset(out, 0, size);
+	if(out != NULL){ memset(out, 0, size); } //don't memset if memstack_malloc fails
 	return out;
 }
 
 void* memstack_realloc(struct memstack_loc loc, size_t newSize)
 {
+	//make sure that loc does not refer to an invalid position
+	if(loc.frameIndex > currentFrame) return NULL;
+	if(loc.framePos >= frames[loc.frameIndex].size) return NULL;
+	
 	if(newSize == 0)
 	{
 		memstack_free(loc);
@@ -165,6 +167,10 @@ void* memstack_realloc(struct memstack_loc loc, size_t newSize)
 
 void  memstack_free(struct memstack_loc loc)
 {
+	//make sure that loc does not refer to an invalid position
+	if(loc.frameIndex > currentFrame) return;
+	if(loc.framePos >= frames[loc.frameIndex].size) return;
+	
 	//run callbacks
 	if(frames[loc.frameIndex].arr[loc.framePos].cbPtr != NULL)
 	{
@@ -189,23 +195,26 @@ void  memstack_free(struct memstack_loc loc)
 
 bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
 {
+	//make sure that loc does not refer to an invalid position
+	if(loc->frameIndex > currentFrame) return false;
+	if(loc->framePos >= frames[loc->frameIndex].size) return false;
+	
 	//compute new frame
 	int16_t newFrame = loc->frameIndex - numFrames;
 	if(newFrame < 0) { newFrame = 0; }
 	
-	//get the pointer at loc
-	struct block b = frames[loc->frameIndex].arr[loc->framePos];
-	
 	//check if the new frame needs to be reallocated
 	if(frames[newFrame].size == frames[newFrame].capacity)
 	{
-		if(realloc_frame(newFrame) == false) { return false; }
+		if(realloc_frame(newFrame) == false) return false;
 	}
 	
+	//get the block pointed to by loc
+	struct block* b = &frames[loc->frameIndex].arr[loc->framePos];
 	//move the block
-	frames[newFrame].arr[frames[newFrame].size] = b;
-	//set the old data to NULL
-	frames[loc->frameIndex].arr[loc->framePos] = NULL_BLOCK;
+	frames[newFrame].arr[frames[newFrame].size] = *b;
+	//set the old block to NULL
+	*b = NULL_BLOCK;
 	//update the loc
 	loc->frameIndex = newFrame;
 	loc->framePos   = frames[newFrame].size;
@@ -217,10 +226,8 @@ bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
 
 bool memstack_registerPtr(void* ptr, memstack_callbackPtr fn, struct memstack_loc* loc)
 {
-	if(currentFrame < 0)
-	{
-		return false;
-	}
+	if(currentFrame < 0) return false;
+	
 	if(frames[currentFrame].size == frames[currentFrame].capacity)
 	{
 		if(realloc_frame(currentFrame) == false) { return false; }
@@ -238,22 +245,10 @@ bool memstack_registerPtr(void* ptr, memstack_callbackPtr fn, struct memstack_lo
 	return true;
 }
 
-void memstack_registerLoc(struct memstack_loc loc, memstack_callbackPtr fn)
-{
-	frames[loc.frameIndex].arr[loc.framePos].cbPtr = fn;
-}
-
-void memstack_registerLocVoid(struct memstack_loc loc, memstack_callbackVoid fn)
-{
-	frames[loc.frameIndex].arr[loc.framePos].cbVoid= fn;
-}
-
 bool memstack_registerVoid(memstack_callbackVoid fn, struct memstack_loc* loc)
 {
-	if(currentFrame < 0)
-	{
-		return false;
-	}
+	if(currentFrame < 0) return false;
+	
 	if(frames[currentFrame].size == frames[currentFrame].capacity)
 	{
 		if(realloc_frame(currentFrame) == false) { return false; }
@@ -271,8 +266,30 @@ bool memstack_registerVoid(memstack_callbackVoid fn, struct memstack_loc* loc)
 	return true;
 }
 
+void memstack_registerLoc(struct memstack_loc loc, memstack_callbackPtr fn)
+{
+	//make sure that loc does not refer to an invalid position
+	if(loc.frameIndex > currentFrame) return;
+	if(loc.framePos >= frames[loc.frameIndex].size) return;
+	
+	frames[loc.frameIndex].arr[loc.framePos].cbPtr = fn;
+}
+
+void memstack_registerLocVoid(struct memstack_loc loc, memstack_callbackVoid fn)
+{
+	//make sure that loc does not refer to an invalid position
+	if(loc.frameIndex > currentFrame) return;
+	if(loc.framePos >= frames[loc.frameIndex].size) return;
+	
+	frames[loc.frameIndex].arr[loc.framePos].cbVoid= fn;
+}
+
 void memstack_unregister(struct memstack_loc loc)
 {
+	//make sure that loc does not refer to an invalid position
+	if(loc.frameIndex > currentFrame) return;
+	if(loc.framePos >= frames[loc.frameIndex].size) return;
+	
 	frames[loc.frameIndex].arr[loc.framePos].cbPtr = NULL;
 	frames[loc.frameIndex].arr[loc.framePos].cbVoid = NULL;
 }
