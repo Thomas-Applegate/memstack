@@ -294,3 +294,31 @@ void memstack_unregister(struct memstack_loc loc)
 	frames[loc.frameIndex].arr[loc.framePos].cbPtr = NULL;
 	frames[loc.frameIndex].arr[loc.framePos].cbVoid = NULL;
 }
+
+void* memstack_getPtr(struct memstack_loc loc)
+{
+	//make sure that loc does not refer to an invalid position
+	if(loc.frameIndex > currentFrame) return NULL;
+	if(loc.framePos >= frames[loc.frameIndex].size) return NULL;
+	
+	return frames[loc.frameIndex].arr[loc.framePos].data;
+}
+
+bool memstack_getLoc(void* ptr, struct memstack_loc* loc)
+{
+	if(ptr == NULL) return false;
+	
+	for(int i = currentFrame; i >= 0; i--)
+	{
+		for(int j = frames[i].size-1; j >= 0; j--)
+		{
+			if(frames[i].arr[j].data == ptr)
+			{
+				loc->frameIndex = i;
+				loc->framePos = j;
+				return true;
+			}
+		}
+	}
+	return false;
+}

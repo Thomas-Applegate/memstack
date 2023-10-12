@@ -70,11 +70,11 @@ void* memstack_calloc(size_t size, struct memstack_loc* loc, memstack_callbackPt
 //If successful returns the pointer to the reallocated data, otherwise returns
 //NULL. If newSize is 0 the data will be freed and NULL returned.
 //If loc is NULL will allocate newSize bytes with memstack_malloc
+//If loc does not refer to data previously allocated then nothing will happen
 void* memstack_realloc(struct memstack_loc* loc, size_t newSize);
 
 //Manually frees data previously obtained from memstack_malloc
-//If loc does not refer to data previously allocated by memstack_malloc
-//then the behavior is undefined
+//If loc does not refer to data previously allocated then nothing will happen
 //If the loc refers to a pointer with a callabck then the callback
 //will be called.
 //If the pointer refers to memory obtained externally, then
@@ -114,5 +114,15 @@ void memstack_registerLocVoid(struct memstack_loc loc, memstack_callbackVoid fn)
 
 //unregister any callbacks assigned to the block referenced by the provided loc
 void memstack_unregister(struct memstack_loc loc);
+
+//get the pointer referenced by the provided loc
+void* memstack_getPtr(struct memstack_loc loc);
+
+//find the loc associated with the given pointer
+//return true if found and false otherwise
+//stores the loc by reference
+//Note: this is slow as it has to search every saved record until it finds a match
+//if possible save the loc when allocating
+bool memstack_getLoc(void* ptr, struct memstack_loc* loc);
 
 #endif //MEMSTACK_H
