@@ -174,14 +174,14 @@ void  memstack_free(struct memstack_loc loc)
 	if(loc.framePos >= frames[loc.frameIndex].size) return;
 	
 	//run callbacks
-	if(frames[loc.frameIndex].arr[loc.framePos].cbPtr != NULL)
-	{
-		frames[loc.frameIndex].arr[loc.framePos].cbPtr(frames[loc.frameIndex].arr[loc.framePos].data);
-	}
-	
 	if(frames[loc.frameIndex].arr[loc.framePos].cbVoid != NULL)
 	{
 		frames[loc.frameIndex].arr[loc.framePos].cbVoid();
+	}
+	
+	if(frames[loc.frameIndex].arr[loc.framePos].cbPtr != NULL)
+	{
+		frames[loc.frameIndex].arr[loc.framePos].cbPtr(frames[loc.frameIndex].arr[loc.framePos].data);
 	}
 	
 	//free data if needed
