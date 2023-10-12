@@ -142,24 +142,26 @@ void* memstack_calloc(size_t size, struct memstack_loc* loc, memstack_callbackPt
 	return out;
 }
 
-void* memstack_realloc(struct memstack_loc loc, size_t newSize)
+void* memstack_realloc(struct memstack_loc* loc, size_t newSize)
 {
+	if(loc == NULL) return memstack_malloc(newSize, loc, NULL);
+	
 	//make sure that loc does not refer to an invalid position
-	if(loc.frameIndex > currentFrame) return NULL;
-	if(loc.framePos >= frames[loc.frameIndex].size) return NULL;
+	if(loc->frameIndex > currentFrame) return NULL;
+	if(loc->framePos >= frames[loc->frameIndex].size) return NULL;
 	
 	if(newSize == 0)
 	{
-		memstack_free(loc);
+		memstack_free(*loc);
 		return NULL;
 	}else
 	{
-		void* n = realloc(frames[loc.frameIndex].arr[loc.framePos].data, newSize);
+		void* n = realloc(frames[loc->frameIndex].arr[loc->framePos].data, newSize);
 		if(n == NULL)
 		{
 			return NULL;
 		}else{
-			frames[loc.frameIndex].arr[loc.framePos].data = n;
+			frames[loc->frameIndex].arr[loc->framePos].data = n;
 			return n;
 		}
 	}

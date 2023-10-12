@@ -69,9 +69,8 @@ void* memstack_calloc(size_t size, struct memstack_loc* loc, memstack_callbackPt
 //Tries to reallocate data referenced by the provided memstack_loc
 //If successful returns the pointer to the reallocated data, otherwise returns
 //NULL. If newSize is 0 the data will be freed and NULL returned.
-//This will not allocate memory for the first time you must use memstack_malloc
-//or memstack_calloc to obtain memory before reallocating
-void* memstack_realloc(struct memstack_loc loc, size_t newSize);
+//If loc is NULL will allocate newSize bytes with memstack_malloc
+void* memstack_realloc(struct memstack_loc* loc, size_t newSize);
 
 //Manually frees data previously obtained from memstack_malloc
 //If loc does not refer to data previously allocated by memstack_malloc
