@@ -175,13 +175,11 @@ void  memstack_free(struct memstack_loc loc)
 	if(frames[loc.frameIndex].arr[loc.framePos].cbPtr != NULL)
 	{
 		frames[loc.frameIndex].arr[loc.framePos].cbPtr(frames[loc.frameIndex].arr[loc.framePos].data);
-		frames[loc.frameIndex].arr[loc.framePos].cbPtr = NULL;
 	}
 	
 	if(frames[loc.frameIndex].arr[loc.framePos].cbVoid != NULL)
 	{
 		frames[loc.frameIndex].arr[loc.framePos].cbVoid();
-		frames[loc.frameIndex].arr[loc.framePos].cbVoid = NULL;
 	}
 	
 	//free data if needed
@@ -189,8 +187,9 @@ void  memstack_free(struct memstack_loc loc)
 		frames[loc.frameIndex].arr[loc.framePos].data != NULL)
 	{
 		free(frames[loc.frameIndex].arr[loc.framePos].data);
-		frames[loc.frameIndex].arr[loc.framePos].data = NULL;
 	}
+
+	frames[loc.frameIndex].arr[loc.framePos] = NULL_BLOCK;
 }
 
 bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
@@ -201,7 +200,7 @@ bool memstack_lower(struct memstack_loc* loc, unsigned int numFrames)
 	
 	//compute new frame
 	int16_t newFrame = loc->frameIndex - numFrames;
-	if(newFrame < 0) { newFrame = 0; }
+	if(newFrame < 0) newFrame = 0;
 	
 	//check if the new frame needs to be reallocated
 	if(frames[newFrame].size == frames[newFrame].capacity)
@@ -281,7 +280,7 @@ void memstack_registerLocVoid(struct memstack_loc loc, memstack_callbackVoid fn)
 	if(loc.frameIndex > currentFrame) return;
 	if(loc.framePos >= frames[loc.frameIndex].size) return;
 	
-	frames[loc.frameIndex].arr[loc.framePos].cbVoid= fn;
+	frames[loc.frameIndex].arr[loc.framePos].cbVoid = fn;
 }
 
 void memstack_unregister(struct memstack_loc loc)
